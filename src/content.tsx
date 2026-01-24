@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client';
 
 
 chrome.runtime.onMessage.addListener((
-    message: { type: string; site: string },
+    message: { type: string; site: string; contacts: any[] },
     _sender: chrome.runtime.MessageSender,
     _sendResponse: (response?: any) => void
 ) => {
@@ -17,11 +17,13 @@ chrome.runtime.onMessage.addListener((
         const shadow = host.attachShadow({ mode: 'open' });
         const root = createRoot(shadow);
 
-        root.render(<Notification site={message.site} />);
+        root.render(<Notification site={message.site} contacts={message.contacts} />);
     }
 });
 
-const Notification = ({ site }: { site: string }) => {
+const Notification = ({ site, contacts }: { site: string; contacts: any[] }) => {
+    // Log contacts for debugging/verification purposes since they aren't displayed yet
+    console.log(`Contacts for ${site}:`, contacts);
     return (
         <div style={{
             position: 'fixed',
@@ -39,7 +41,7 @@ const Notification = ({ site }: { site: string }) => {
             Did you know {site} is blocked in Syria?
             <div style={{ marginTop: '12px' }}>
                 <a
-                    href={`https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent('Request to Enable Service Access in Syria')}&body=${encodeURIComponent(`Dear Team,\n\nI am writing to request that service access be enabled for users in Syria.\n\nFollowing the lifting of the comprehensive trade embargo on Syria announced by the U.S. Treasury in December 2025, all sanctions on Syria have now been lifted by both the United States and the European Union. Syria is no longer listed under OFAC's embargoed countries.\n\nFor reference:\n1- U.S. Treasury announcement: https://ofac.treasury.gov/media/934736/download?inline\n2- OFAC sanctions programs overview: https://ofac.treasury.gov/sanctions-programs-and-country-information\n\nI have also attached relevant supporting documentation from https://unblocksyria.com/resources.\n\nSeveral other companies have already enabled access. As millions of Syrians work to rebuild their country, access to global digital services is increasingly important.\n\nI kindly request a review of the current restriction and would appreciate confirmation on whether Syria can now be onboarded and supported on your platform.\n\nBest regards,\n[Your Name]`)}`}
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contacts.map(c => c.email).join(','))}&su=${encodeURIComponent('Request to Enable Service Access in Syria')}&body=${encodeURIComponent(`Dear Team,\n\nI am writing to request that service access be enabled for users in Syria.\n\nFollowing the lifting of the comprehensive trade embargo on Syria announced by the U.S. Treasury in December 2025, all sanctions on Syria have now been lifted by both the United States and the European Union. Syria is no longer listed under OFAC's embargoed countries.\n\nFor reference:\n1- U.S. Treasury announcement: https://ofac.treasury.gov/media/934736/download?inline\n2- OFAC sanctions programs overview: https://ofac.treasury.gov/sanctions-programs-and-country-information\n\nI have also attached relevant supporting documentation from https://unblocksyria.com/resources.\n\nSeveral other companies have already enabled access. As millions of Syrians work to rebuild their country, access to global digital services is increasingly important.\n\nI kindly request a review of the current restriction and would appreciate confirmation on whether Syria can now be onboarded and supported on your platform.\n\nBest regards,\n[Your Name]`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{

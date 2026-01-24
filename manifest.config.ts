@@ -5,7 +5,7 @@ import { blockedSites } from './src/shared/sites'
 const { version } = packageJson
 
 // Convert blocked sites to match patterns
-const sitePatterns = blockedSites.map(site => `*://*.${site}/*`)
+const sitePatterns = blockedSites.map(site => `*://*.${site.domain}/*`)
 
 export default defineManifest(async (_env) => ({
     manifest_version: 3,

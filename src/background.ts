@@ -14,10 +14,14 @@ chrome.tabs.onUpdated.addListener((
         }
 
         const hostname = url.hostname;
-        const isBlocked = blockedSites.some(site => hostname.endsWith(site));
+        const matchedSite = blockedSites.find(site => hostname.endsWith(site.domain));
 
-        if (isBlocked) {
-            chrome.tabs.sendMessage(tabId, { type: 'SHOW_NOTICE', site: hostname });
+        if (matchedSite) {
+            chrome.tabs.sendMessage(tabId, {
+                type: 'SHOW_NOTICE',
+                site: matchedSite.domain,
+                contacts: matchedSite.contacts
+            });
         }
     }
 });
