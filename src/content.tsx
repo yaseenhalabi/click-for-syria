@@ -37,6 +37,25 @@ const Notification = ({ site }: { site: string }) => {
             color: '#333'
         }}>
             Did you know {site} is blocked in Syria?
+            <div style={{ marginTop: '12px' }}>
+                <a
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(`Unblock ${site} in Syria`)}&body=${encodeURIComponent(`To whom it may concern,\n\nI am writing to advocate for the unblocking of ${site} in Syria. Access to this platform is essential for education, communication, and development.\n\nPlease consider removing the restrictions on this domain.\n\nSincerely,\n[Your Name]`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                        display: 'inline-block',
+                        padding: '8px 16px',
+                        backgroundColor: '#ea4335',
+                        color: '#fff',
+                        textDecoration: 'none',
+                        borderRadius: '4px',
+                        fontSize: '14px',
+                        fontWeight: 500
+                    }}
+                >
+                    Go to Gmail
+                </a>
+            </div>
         </div>
     );
 };
