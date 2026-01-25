@@ -9,6 +9,7 @@ interface SelectEmailProps {
     logoUrl?: string;
     backgroundUrl?: string; // For the wave background
     onSuccess?: () => void;
+    userName?: string;
 }
 
 const SelectEmail: React.FC<SelectEmailProps> = ({ onBack, contacts = [], logoUrl, backgroundUrl, onSuccess }) => {
@@ -16,6 +17,15 @@ const SelectEmail: React.FC<SelectEmailProps> = ({ onBack, contacts = [], logoUr
     // SharedContact has { name, role?, email?, linkedin? }
 
     const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
+    const [userName, setUserName] = useState("[Your Name]");
+
+    useEffect(() => {
+        chrome.storage.sync.get(["userName"], (result) => {
+            if (typeof result.userName === "string" && result.userName.trim()) {
+                setUserName(result.userName);
+            }
+        });
+    }, []);
 
     // Initialize selection - select all valid emails by default? or just the first one?
     // Let's select all by default as per typical user intent in this app.
@@ -60,7 +70,7 @@ Several other companies have already enabled access.As millions of Syrians work 
 I kindly request a review of the current restriction and would appreciate confirmation on whether Syria can now be onboarded and supported on your platform.
 
 Best regards,
-    [Your Name]`;
+${userName}`;
 
         // Use Gmail link for better experience if possible, or mailto
         const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
