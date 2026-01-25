@@ -1,38 +1,38 @@
 import React, { useState, useEffect } from "react";
 import "./SelectEmail.css";
-// Assets are passed as props to ensure they work in both Content Script and Popup contexts
 import type { Contact as SharedContact } from "./shared/sites";
 
 interface SelectEmailProps {
     onBack: () => void;
     contacts?: SharedContact[];
     logoUrl?: string;
-    backgroundUrl?: string; // For the wave background
+    backgroundUrl?: string;
     onSuccess?: () => void;
     userName?: string;
 }
 
-const SelectEmail: React.FC<SelectEmailProps> = ({ onBack, contacts = [], logoUrl, backgroundUrl, onSuccess }) => {
-    // We need to map SharedContact to a format we can use, specifically ensuring unique IDs.
-    // SharedContact has { name, role?, email?, linkedin? }
-
+const SelectEmail: React.FC<SelectEmailProps> = ({ onBack, contacts = [], logoUrl, backgroundUrl, onSuccess, userName: userNameProp }) => {
     const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
-    const [userName, setUserName] = useState("[Your Name]");
+    const [userName, setUserName] = useState(userNameProp || "[Your Name]");
 
+    // Always fetch fresh from storage when component mounts
     useEffect(() => {
-        chrome.storage.sync.get(["userName"], (result) => {
-            if (typeof result.userName === "string" && result.userName.trim()) {
-                setUserName(result.userName);
-            }
-        });
-    }, []);
+        if (typeof chrome !== "undefined" && chrome.storage?.sync) {
+            chrome.storage.sync.get(["userName"], (result) => {
+                if (typeof result.userName === "string" && result.userName.trim()) {
+                    setUserName(result.userName);
+                }
+            });
+        }
+    }, []); // Fetch on mount
 
-    // Initialize selection - select all valid emails by default? or just the first one?
-    // Let's select all by default as per typical user intent in this app.
+    // Initialize selection
     useEffect(() => {
         const allEmails = contacts.filter(c => c.email).map(c => c.email as string);
         setSelectedEmails(new Set(allEmails));
     }, [contacts]);
+
+    // ... rest of the component stays the same
 
     const toggleSelection = (email: string) => {
         const newSelection = new Set(selectedEmails);
@@ -55,24 +55,23 @@ const SelectEmail: React.FC<SelectEmailProps> = ({ onBack, contacts = [], logoUr
         const subject = "Request to Enable Service Access in Syria";
         const body = `Dear Team,
 
-    I am writing to request that service access be enabled for users in Syria.
+I am writing to request that service access be enabled for users in Syria.
 
-Following the lifting of the comprehensive trade embargo on Syria announced by the U.S.Treasury in December 2025, all sanctions on Syria have now been lifted by both the United States and the European Union.Syria is no longer listed under OFAC's embargoed countries.
+Following the lifting of the comprehensive trade embargo on Syria announced by the U.S. Treasury in December 2025, all sanctions on Syria have now been lifted by both the United States and the European Union. Syria is no longer listed under OFAC's embargoed countries.
 
 For reference:
-1 - U.S.Treasury announcement: https://ofac.treasury.gov/media/934736/download?inline
+1 - U.S. Treasury announcement: https://ofac.treasury.gov/media/934736/download?inline
 2 - OFAC sanctions programs overview: https://ofac.treasury.gov/sanctions-programs-and-country-information
 
 I have also attached relevant supporting documentation from https://unblocksyria.com/resources.
 
-Several other companies have already enabled access.As millions of Syrians work to rebuild their country, access to global digital services is increasingly important.
+Several other companies have already enabled access. As millions of Syrians work to rebuild their country, access to global digital services is increasingly important.
 
 I kindly request a review of the current restriction and would appreciate confirmation on whether Syria can now be onboarded and supported on your platform.
 
 Best regards,
 ${userName}`;
 
-        // Use Gmail link for better experience if possible, or mailto
         const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
         window.open(gmailLink, '_blank');
@@ -81,6 +80,7 @@ ${userName}`;
 
     return (
         <div className="select-email-container">
+            {/* ... rest of the JSX stays exactly the same ... */}
             <header className="header">
                 <button onClick={onBack} className="back-button" aria-label="Go back">
                     <svg
