@@ -29,13 +29,13 @@ const InstaPostGenerator = () => {
             transformOrigin: "top left",
           },
         })
-        .then((dataUrl) => {
+        .then((dataUrl: string) => {
           const link = document.createElement("a");
           link.download = "ClickForSyria.png";
           link.href = dataUrl;
           link.click();
         })
-        .catch((err) => {
+        .catch((err: Error) => {
           console.error("Failed to generate image", err);
         });
     }
@@ -45,7 +45,7 @@ const InstaPostGenerator = () => {
     Papa.parse("/data.csv", {
       download: true,
       header: true,
-      complete: (results) => {
+      complete: (results: Papa.ParseResult<csvrow>) => {
         const rows = results.data as csvrow[];
         const foundRow = rows.find((row) => row.url === searchUrl.trim());
 
@@ -54,7 +54,7 @@ const InstaPostGenerator = () => {
           setImage(`/assets/${name}.png`);
         }
       },
-      error: (err) => {
+      error: (err: Error) => {
         console.error("Error parsing CSV:", err);
       },
     });

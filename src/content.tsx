@@ -1,9 +1,11 @@
 import { createRoot } from 'react-dom/client';
+import { useState, useEffect } from 'react';
 import logoImagePath from './assets/click-for-syria.png';
 import syrianFlagPath from './assets/syrian-flag.png';
 import gmailLogoPath from './assets/gmail.png';
 import instagramLogoPath from './assets/instagram.png';
 import linkedinLogoPath from './assets/linkedin.png';
+import { blockedSites } from './shared/sites';
 
 // Helper to get proper URL for assets - handles both inlined data URLs and file paths
 const getAssetUrl = (assetPath: string) => {
@@ -63,6 +65,34 @@ chrome.runtime.sendMessage({ type: 'CHECK_CURRENT_SITE' }, (response) => {
 const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[]; onHide: () => void }) => {
     // Log contacts for debugging/verification purposes since they aren't displayed yet
     console.log(`Contacts for ${site}:`, contacts);
+
+    // Get service name from blockedSites, fallback to domain
+    const blockedSite = blockedSites.find(s => site.includes(s.domain) || s.domain.includes(site));
+    const serviceName = blockedSite?.name || site;
+
+    // State for service image
+    const [serviceImageLoaded, setServiceImageLoaded] = useState(false);
+    const [serviceImageUrl, setServiceImageUrl] = useState<string | null>(null);
+
+    // Try to load the service image dynamically
+    useEffect(() => {
+        if (blockedSite?.name) {
+            const imageName = blockedSite.name.replace(/\s+/g, '-') + '.jpg';
+            const imageUrl = chrome.runtime.getURL(`assets/${imageName}`);
+            
+            // Test if image exists by trying to load it
+            const img = new Image();
+            img.onload = () => {
+                setServiceImageUrl(imageUrl);
+                setServiceImageLoaded(true);
+            };
+            img.onerror = () => {
+                setServiceImageLoaded(false);
+                setServiceImageUrl(null);
+            };
+            img.src = imageUrl;
+        }
+    }, [blockedSite?.name]);
 
     const emailBody = `Dear Team,\n\nI am writing to request that service access be enabled for users in Syria.\n\nFollowing the lifting of the comprehensive trade embargo on Syria announced by the U.S. Treasury in December 2025, all sanctions on Syria have now been lifted by both the United States and the European Union. Syria is no longer listed under OFAC's embargoed countries.\n\nFor reference:\n1- U.S. Treasury announcement: https://ofac.treasury.gov/media/934736/download?inline\n2- OFAC sanctions programs overview: https://ofac.treasury.gov/sanctions-programs-and-country-information\n\nI have also attached relevant supporting documentation from https://unblocksyria.com/resources.\n\nSeveral other companies have already enabled access. As millions of Syrians work to rebuild their country, access to global digital services is increasingly important.\n\nI kindly request a review of the current restriction and would appreciate confirmation on whether Syria can now be onboarded and supported on your platform.\n\nBest regards,\n[Your Name]`;
 
@@ -136,20 +166,35 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
                     lineHeight: 1.3,
                     color: '#1a1a1a'
                 }}>
-                    Did you know that <strong> ChatGPT </strong> is{' '}
+                    Did you know that <strong> {serviceName} </strong> is{' '}
                     <span style={{ color: '#ce1126', fontWeight: 700 }}>blocked</span>{' '}
                     for Syrians?
                 </h1>
 
-                {/* Syrian Flag Image */}
+                {/* Service Logo and Syrian Flag Images */}
                 <div style={{
-                    marginBottom: '32px'
+                    marginBottom: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px'
                 }}>
+                    {serviceImageLoaded && serviceImageUrl && (
+                        <img 
+                            src={serviceImageUrl}
+                            alt={serviceName}
+                            style={{
+                                width: '100px',
+                                height: 'auto',
+                                borderRadius: '4px'
+                            }}
+                        />
+                    )}
                     <img 
                         src={syrianFlagImage}
                         alt="Syrian Flag"
                         style={{
-                            width: '160px',
+                            width: '120px',
                             height: 'auto',
                             borderRadius: '4px'
                         }}

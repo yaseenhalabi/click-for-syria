@@ -26,5 +26,11 @@ export default defineManifest(async (_env) => ({
         }
     ],
     host_permissions: sitePatterns,
-    permissions: ['tabs']
+    permissions: ['tabs'],
+    web_accessible_resources: [
+        {
+            resources: ["assets/*"],
+            matches: ["<all_urls>"]
+        }
+    ]
 }))
