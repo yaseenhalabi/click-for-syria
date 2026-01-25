@@ -4,10 +4,9 @@ import syrianFlagPath from "./assets/syrian-flag.png";
 import gmailLogoPath from "./assets/gmail.png";
 import instagramLogoPath from "./assets/instagram.png";
 import linkedinLogoPath from "./assets/linkedin.png";
-import { useRef, useState } from "react";
-import instaBackground from "/src/assets/insta-background.png";
+import { useState, useEffect } from "react";
+import instaBackground from "/public/assets/insta-background.png";
 import { blockedSites } from "./shared/sites";
-import * as htmlToImage from "html-to-image";
 
 // Helper to get proper URL for assets - handles both inlined data URLs and file paths
 const getAssetUrl = (assetPath: string) => {
@@ -66,6 +65,18 @@ chrome.runtime.sendMessage({ type: "CHECK_CURRENT_SITE" }, (response) => {
   }
 });
 
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous"; // Important for external images
+    img.onload = () => resolve(img);
+    img.onerror = () => {
+      reject(new Error(`Failed to load image: ${src}`));
+    };
+    img.src = src;
+  });
+};
+
 const Notification = ({
   site,
   contacts,
@@ -78,6 +89,7 @@ const Notification = ({
   // Log contacts for debugging/verification purposes since they aren't displayed yet
   console.log(`Contacts for ${site}:`, contacts);
   const [step, setStep] = useState<"NOTICE" | "GENERATOR">("NOTICE");
+  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
 
   const emailBody = `Dear Team,\n\nI am writing to request that service access be enabled for users in Syria.\n\nFollowing the lifting of the comprehensive trade embargo on Syria announced by the U.S. Treasury in December 2025, all sanctions on Syria have now been lifted by both the United States and the European Union. Syria is no longer listed under OFAC's embargoed countries.\n\nFor reference:\n1- U.S. Treasury announcement: https://ofac.treasury.gov/media/934736/download?inline\n2- OFAC sanctions programs overview: https://ofac.treasury.gov/sanctions-programs-and-country-information\n\nI have also attached relevant supporting documentation from https://unblocksyria.com/resources.\n\nSeveral other companies have already enabled access. As millions of Syrians work to rebuild their country, access to global digital services is increasingly important.\n\nI kindly request a review of the current restriction and would appreciate confirmation on whether Syria can now be onboarded and supported on your platform.\n\nBest regards,\n[Your Name]`;
 
@@ -85,31 +97,105 @@ const Notification = ({
 
   const matchedSite = blockedSites.find((bs) => bs.domain === site);
   const displayName = matchedSite ? matchedSite.name : site;
-  const domEl = useRef<HTMLDivElement>(null);
-  const siteLogo = getAssetUrl(`/assets/${displayName}.png`);
+  const siteLogo = getAssetUrl(`/assets/${displayName}.jpg`);
   const imageBackground = getAssetUrl(instaBackground);
 
-  const downloadImage = () => {
-    if (domEl.current) {
-      htmlToImage
-        .toPng(domEl.current, {
-          // High resolution for the actual export
-          width: 1080,
-          height: 1350,
-          style: {
-            transform: "scale(1)",
-            transformOrigin: "top left",
-          },
-        })
-        .then((dataUrl) => {
-          const link = document.createElement("a");
-          link.download = `UnblockSyria-${displayName}.png`;
-          link.href = dataUrl;
-          link.click();
-        })
-        .catch((err) => console.error("Export failed", err));
+  const handleDownload = async () => {
+    try {
+      const dataUrl = await generateImage();
+      setPreviewDataUrl(dataUrl);
+      const link = document.createElement("a");
+      link.download = `UnblockSyria-${displayName}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error("Failed to generate image", error);
     }
   };
+
+  // Extracted image generation so we can reuse it for preview and download
+  const generateImage = async (): Promise<string> => {
+    // 1. Create a virtual canvas
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1350;
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) throw new Error("Canvas context not available");
+
+    // 2. Load images
+    const [bgImg, logoImg] = await Promise.all([
+      loadImage(imageBackground),
+      loadImage(siteLogo),
+    ]);
+
+    // 3. Draw Background
+    ctx.drawImage(bgImg, 0, 0, 1080, 1350);
+
+    // Wait for fonts to be ready so text metrics match DOM
+    if ((document as any).fonts && (document as any).fonts.ready) {
+      try {
+        await (document as any).fonts.ready;
+      } catch (e) {
+        // ignore font loading errors and proceed
+      }
+    }
+
+    // --- NEW LAYOUT START ---
+
+    // 4. Draw Logo (Centered at the top)
+    ctx.drawImage(logoImg, 390, 20, 300, 300);
+
+    // 5. Draw Text
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#000000";
+    ctx.font = "bold 55px 'Inter', sans-serif";
+
+    const fullText = `${displayName} is still banned in Syria`;
+    const words = fullText.split(" ");
+    let line = "";
+    let yPos = 420;
+    const xPos = 540;
+    const maxWidth = 800;
+
+    if (ctx.measureText(fullText).width > maxWidth) {
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + " ";
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+          ctx.fillText(line, xPos, yPos);
+          line = words[n] + " ";
+          yPos += 70;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, xPos, yPos);
+    } else {
+      ctx.fillText(fullText, xPos, yPos);
+    }
+
+    // --- NEW LAYOUT END ---
+
+    return canvas.toDataURL("image/png");
+  };
+
+  // Generate preview as soon as the user opens the generator view
+  useEffect(() => {
+    let mounted = true;
+    if (step === "GENERATOR" && !previewDataUrl) {
+      generateImage()
+        .then((url) => {
+          if (mounted) setPreviewDataUrl(url);
+        })
+        .catch((err) => {
+          console.error("Failed to generate preview image", err);
+        });
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [step]);
 
   if (step === "GENERATOR") {
     return (
@@ -174,61 +260,60 @@ const Notification = ({
               borderRadius: "8px",
             }}
           >
-            <div
-              ref={domEl}
-              style={{
-                width: "1080px",
-                height: "1350px",
-                // FIX: Use url() wrapper and ensure path is absolute
-                backgroundImage: `url("${imageBackground}")`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                transform: "scale(0.33)", // Adjusted scale to fit 600px width better
-                transformOrigin: "top center",
-              }}
-            >
+            {previewDataUrl ? (
               <img
-                src={siteLogo}
-                alt=""
-                style={{ marginBottom: "50px", width: "300px", zIndex: 10 }}
-                // FIX: Add crossOrigin if loading from external source (not needed for local assets but good practice)
-                crossOrigin="anonymous"
+                src={previewDataUrl}
+                alt="Generated preview"
+                style={{
+                  width: "1080px",
+                  height: "1350px",
+                  transform: "scale(0.33)",
+                  transformOrigin: "top center",
+                  display: "block",
+                }}
               />
-
+            ) : (
               <div
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.85)",
-                  padding: "50px",
-                  borderRadius: "20px",
-                  width: "80%",
-                  maxWidth: "800px",
+                  width: "1080px",
+                  height: "1350px",
+                  // FIX: Use url() wrapper and ensure path is absolute
+                  backgroundImage: `url("${imageBackground}")`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  transform: "scale(0.33)", // Adjusted scale to fit 600px width better
+                  transformOrigin: "top center",
                 }}
               >
-                <h1
+                <img
+                  src={siteLogo}
+                  alt=""
+                  style={{ marginBottom: "50px", width: "300px", zIndex: 10 }}
+                  // FIX: Add crossOrigin if loading from external source (not needed for local assets but good practice)
+                  crossOrigin="anonymous"
+                />
+
+                <div
                   style={{
-                    color: "#207814",
-                    fontSize: "80px",
-                    margin: "0 0 20px 0",
+                    marginTop: "20px",
                   }}
                 >
-                  {displayName}
-                </h1>
-                <p style={{ fontSize: "35px", margin: "10px 0" }}>
-                  is currently banned in Syria
-                </p>
-                <p style={{ fontSize: "28px", color: "#666" }}>
-                  Share this to spread the word
-                </p>
+                  <p style={{ fontSize: "35px", margin: "10px 0" }}>
+                    {displayName} is currently banned in Syria
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <button
-            onClick={downloadImage}
+            onClick={() => {
+              void handleDownload();
+            }}
             style={{
               padding: "12px 30px",
               fontSize: "18px",
@@ -240,7 +325,7 @@ const Notification = ({
               fontWeight: "bold",
             }}
           >
-            Download Story Image
+            Download Post
           </button>
         </div>
       </div>
