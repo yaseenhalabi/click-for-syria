@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./SelectLinkedin.css";
 // Assets are passed as props to ensure they work in both Content Script and Popup contexts
 import type { Contact as SharedContact } from "./shared/sites";
@@ -15,6 +15,15 @@ const SelectLinkedin: React.FC<SelectLinkedinProps> = ({ onBack, contacts = [], 
     // Filter contacts that have a LinkedIn URL
     const linkedinContacts = contacts.filter(c => c.linkedin);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [userName, setUserName] = useState("[Your Name]");
+    
+    useEffect(() => {
+        chrome.storage.sync.get(["userName"], (result) => {
+            if (typeof result.userName === "string" && result.userName.trim()) {
+                setUserName(result.userName);
+            }
+        });
+    }, []);
 
     // Default outreach message
     const outreachMessage = `Dear [Name],
@@ -31,7 +40,8 @@ Access to platforms like yours is vital for Syrians rebuilding their lives and e
 
 I would appreciate if you could look into enabling access for users in Syria.
 
-Best regards,`;
+Best regards,
+${userName}`;
 
     const handleGenerateOutreach = () => {
         setIsModalOpen(true);
