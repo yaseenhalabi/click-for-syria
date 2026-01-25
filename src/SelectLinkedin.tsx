@@ -10,14 +10,15 @@ interface SelectLinkedinProps {
     logoUrl?: string;
     backgroundUrl?: string; // For the footer button background
     userName?: string;
+    serviceName?: string;
 }
 
-const SelectLinkedin: React.FC<SelectLinkedinProps> = ({ onBack, contacts = [], logoUrl, backgroundUrl, userName: userNameProp }) => {
+const SelectLinkedin: React.FC<SelectLinkedinProps> = ({ onBack, contacts = [], logoUrl, backgroundUrl, userName: userNameProp, serviceName = "your company" }) => {
     // Filter contacts that have a LinkedIn URL
     const linkedinContacts = contacts.filter(c => c.linkedin);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [userName, setUserName] = useState(userNameProp || "[Your Name]");
-    
+
     useEffect(() => {
         if (typeof chrome !== "undefined" && chrome.storage?.sync) {
             chrome.storage.sync.get(["userName"], (result) => {
@@ -35,9 +36,10 @@ const SelectLinkedin: React.FC<SelectLinkedinProps> = ({ onBack, contacts = [], 
     }, [userNameProp]);
 
     // Default outreach message
-    const outreachMessage = `Dear [Name],
+    const firstContactName = linkedinContacts[0]?.name || "[Name]";
+    const outreachMessage = `Dear ${firstContactName},
 
-I am writing to inquire about [Company Name]'s plans regarding service access in Syria.
+I am writing to inquire about ${serviceName}'s plans regarding service access in Syria.
 
 Following the lifting of the comprehensive trade embargo on Syria by the U.S. Treasury in December 2025, and subsequent alignment by the EU, Syria is no longer under broad sanctions programs that necessitate a complete block of digital services.
 
@@ -45,7 +47,7 @@ For reference:
 U.S. Treasury: https://ofac.treasury.gov/media/934736/download?inline
 OFAC Sanctions Programs: https://ofac.treasury.gov/sanctions-programs-and-country-information
 
-Access to platforms like yours is vital for Syrians rebuilding their lives and economy.
+Access to platforms like ${serviceName} is vital for Syrians rebuilding their lives and economy.
 
 I would appreciate if you could look into enabling access for users in Syria.
 
