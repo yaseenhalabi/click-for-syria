@@ -9,9 +9,10 @@ interface SelectEmailProps {
     backgroundUrl?: string;
     onSuccess?: () => void;
     userName?: string;
+    serviceName?: string;
 }
 
-const SelectEmail: React.FC<SelectEmailProps> = ({ onBack, contacts = [], logoUrl, backgroundUrl, onSuccess, userName: userNameProp }) => {
+const SelectEmail: React.FC<SelectEmailProps> = ({ onBack, contacts = [], logoUrl, backgroundUrl, onSuccess, userName: userNameProp, serviceName = "your company" }) => {
     const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set());
     const [userName, setUserName] = useState(userNameProp || "[Your Name]");
 
@@ -52,10 +53,10 @@ const SelectEmail: React.FC<SelectEmailProps> = ({ onBack, contacts = [], logoUr
 
         const emailList = Array.from(selectedEmails);
         const to = emailList.join(',');
-        const subject = "Request to Enable Service Access in Syria";
-        const body = `Dear Team,
+        const subject = `Request to Enable Service Access for ${serviceName} in Syria`;
+        const body = `Dear ${serviceName} Team,
 
-I am writing to request that service access be enabled for users in Syria.
+I am writing to request that service access be enabled for users in Syria for ${serviceName}.
 
 Following the lifting of the comprehensive trade embargo on Syria announced by the U.S. Treasury in December 2025, all sanctions on Syria have now been lifted by both the United States and the European Union. Syria is no longer listed under OFAC's embargoed countries.
 
@@ -65,7 +66,7 @@ For reference:
 
 I have also attached relevant supporting documentation from https://unblocksyria.com/resources.
 
-Several other companies have already enabled access. As millions of Syrians work to rebuild their country, access to global digital services is increasingly important.
+Several other companies have already enabled access. As millions of Syrians work to rebuild their country, access to global digital services like ${serviceName} is increasingly important.
 
 I kindly request a review of the current restriction and would appreciate confirmation on whether Syria can now be onboarded and supported on your platform.
 

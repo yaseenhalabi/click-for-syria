@@ -120,14 +120,14 @@ const InjectedApp = ({ site, contacts }: { site: string; contacts: Contact[] }) 
     const [currentView, setCurrentView] = useState<'home' | 'email' | 'linkedin' | 'insta' | 'thankyou'>('home');
     const [userName, setUserName] = useState("[Your Name]");
     useEffect(() => {
-    if (typeof chrome !== "undefined" && chrome.storage?.sync) {
-        chrome.storage.sync.get(['userName'], (result) => {
-            if (typeof result.userName === 'string' && result.userName.trim()) {
-                setUserName(result.userName);
-            }
-        });
-    }
-}, []);
+        if (typeof chrome !== "undefined" && chrome.storage?.sync) {
+            chrome.storage.sync.get(['userName'], (result) => {
+                if (typeof result.userName === 'string' && result.userName.trim()) {
+                    setUserName(result.userName);
+                }
+            });
+        }
+    }, []);
 
     // Get service name from blockedSites, fallback to domain
     const blockedSite = blockedSites.find(s => site.includes(s.domain) || s.domain.includes(site));
@@ -270,6 +270,7 @@ const InjectedApp = ({ site, contacts }: { site: string; contacts: Contact[] }) 
                     backgroundUrl={waveBackgroundImage}
                     onSuccess={() => setCurrentView('thankyou')}
                     userName={userName}
+                    serviceName={serviceName}
                 />
             </div>
         );
@@ -297,6 +298,7 @@ const InjectedApp = ({ site, contacts }: { site: string; contacts: Contact[] }) 
                     contacts={contacts}
                     logoUrl={logoImage}
                     backgroundUrl={waveBackgroundImage}
+                    serviceName={serviceName}
                 />
             </div>
         );
