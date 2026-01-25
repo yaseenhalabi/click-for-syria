@@ -26,7 +26,7 @@ const GenerateInstaPost: React.FC<GenerateInstaPostProps> = ({
             htmlToImage
                 .toPng(domEl.current, {
                     width: 1080,
-                    height: 1350,
+                    height: 1920,
                     style: {
                         transform: "scale(1)",
                         transformOrigin: "top left",
@@ -44,7 +44,7 @@ const GenerateInstaPost: React.FC<GenerateInstaPostProps> = ({
         }
     }, [serviceName]);
 
-    const previewScale = 0.35;
+    const previewScale = 0.22;
 
     return (
         <div className="generate-insta-container">
@@ -76,7 +76,7 @@ const GenerateInstaPost: React.FC<GenerateInstaPostProps> = ({
                 <div className="preview-view-container">
                     <div style={{
                         width: `${1080 * previewScale}px`,
-                        height: `${1350 * previewScale}px`,
+                        height: `${1920 * previewScale}px`,
                         overflow: "hidden",
                         position: "relative"
                     }}>
@@ -85,7 +85,7 @@ const GenerateInstaPost: React.FC<GenerateInstaPostProps> = ({
                             ref={domEl}
                             style={{
                                 width: "1080px",
-                                height: "1350px",
+                                height: "1920px",
                                 backgroundImage: instaBackgroundUrl ? `url(${instaBackgroundUrl})` : "none",
                                 backgroundSize: "cover",
                                 backgroundPosition: "center",
@@ -94,54 +94,77 @@ const GenerateInstaPost: React.FC<GenerateInstaPostProps> = ({
                                 left: 0,
                                 display: "flex",
                                 flexDirection: "column",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                textAlign: "center",
-                                color: "#333",
                                 transform: `scale(${previewScale})`,
                                 transformOrigin: "top left",
                             }}
                         >
-                            {serviceLogoUrl && (
-                                <img
-                                    src={serviceLogoUrl}
-                                    alt={serviceName}
-                                    style={{
-                                        marginBottom: "50px",
-                                        width: "300px",
-                                        opacity: 0.9,
-                                        zIndex: 10,
-                                    }}
-                                />
-                            )}
+                            {/* Top Half */}
+                            <div style={{
+                                flex: 1,
+                                width: "100%",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "flex-start",
+                                padding: "60px",
+                                paddingTop: "80px",
+                                boxSizing: "border-box"
+                            }}>
+                                {logoUrl && (
+                                    <img
+                                        src={logoUrl}
+                                        alt="Click For Syria"
+                                        style={{
+                                            width: "400px",
+                                            height: "auto",
+                                            objectFit: "contain",
+                                            marginBottom: "20px",
+                                        }}
+                                    />
+                                )}
 
-                            <div
-                                style={{
-                                    backgroundColor: "rgba(255, 255, 255, 0.85)",
-                                    padding: "50px",
-                                    borderRadius: "20px",
-                                    width: "80%",
-                                    maxWidth: "800px",
-                                }}
-                            >
-                                <h1
-                                    style={{
-                                        color: "#207814",
-                                        fontSize: "80px",
-                                        margin: "0 0 20px 0",
-                                        fontFamily: "Inter, sans-serif",
-                                        fontWeight: 700,
-                                    }}
-                                >
-                                    {serviceName}
-                                </h1>
-                                <p style={{ fontFamily: "Inter, sans-serif", fontSize: "35px", margin: "10px 0" }}>
-                                    is currently banned in Syria
-                                </p>
-                                <p style={{ fontFamily: "Inter, sans-serif", fontSize: "28px", color: "#666", margin: "10px 0" }}>
-                                    Share this to spread the word
-                                </p>
+                                <div style={{
+                                    flex: 1,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    width: "100%"
+                                }}>
+                                    {serviceLogoUrl && (
+                                        <img
+                                            src={serviceLogoUrl}
+                                            alt={serviceName}
+                                            style={{
+                                                width: "250px",
+                                                height: "auto",
+                                                marginBottom: "40px",
+                                                objectFit: "contain",
+                                            }}
+                                        />
+                                    )}
+                                    <h1
+                                        style={{
+                                            color: "black",
+                                            fontSize: "72px",
+                                            margin: "0",
+                                            fontFamily: "Inter, sans-serif",
+                                            fontWeight: 700,
+                                            textAlign: "center",
+                                            lineHeight: 1.2
+                                        }}
+                                    >
+                                        {serviceName} is still banned in Syria
+                                    </h1>
+                                </div>
                             </div>
+
+                            {/* Bottom Half */}
+                            {/* Bottom Half */}
+                            <div style={{
+                                flex: 1,
+                                width: "100%",
+                            }} />
                         </div>
                     </div>
                 </div>
