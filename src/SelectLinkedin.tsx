@@ -9,21 +9,30 @@ interface SelectLinkedinProps {
     contacts?: SharedContact[];
     logoUrl?: string;
     backgroundUrl?: string; // For the footer button background
+    userName?: string;
 }
 
-const SelectLinkedin: React.FC<SelectLinkedinProps> = ({ onBack, contacts = [], logoUrl, backgroundUrl }) => {
+const SelectLinkedin: React.FC<SelectLinkedinProps> = ({ onBack, contacts = [], logoUrl, backgroundUrl, userName: userNameProp }) => {
     // Filter contacts that have a LinkedIn URL
     const linkedinContacts = contacts.filter(c => c.linkedin);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [userName, setUserName] = useState("[Your Name]");
+    const [userName, setUserName] = useState(userNameProp || "[Your Name]");
     
     useEffect(() => {
-        chrome.storage.sync.get(["userName"], (result) => {
-            if (typeof result.userName === "string" && result.userName.trim()) {
-                setUserName(result.userName);
-            }
-        });
+        if (typeof chrome !== "undefined" && chrome.storage?.sync) {
+            chrome.storage.sync.get(["userName"], (result) => {
+                if (typeof result.userName === "string" && result.userName.trim()) {
+                    setUserName(result.userName);
+                }
+            });
+        }
     }, []);
+    // Update userName if prop changes
+    useEffect(() => {
+        if (userNameProp) {
+            setUserName(userNameProp);
+        }
+    }, [userNameProp]);
 
     // Default outreach message
     const outreachMessage = `Dear [Name],
