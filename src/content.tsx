@@ -24,29 +24,39 @@ const linkedinLogo = getAssetUrl(linkedinLogoPath);
 
 let unmountCallback: (() => void) | null = null;
 
-chrome.runtime.onMessage.addListener((
-    message: { type: string; site: string; contacts: any[] },
-    _sender: chrome.runtime.MessageSender,
-    _sendResponse: (response?: any) => void
-) => {
+// 1. Function to trigger the render logic (extracted for reuse)
+const showNotice = (site: string, contacts: any[]) => {
+    const existingRoot = document.getElementById('click-for-syria-host');
+    if (existingRoot) return;
+
+    const host = document.createElement('div');
+    host.id = 'click-for-syria-host';
+    document.body.appendChild(host);
+
+    const shadow = host.attachShadow({ mode: 'open' });
+    const root = createRoot(shadow);
+
+    unmountCallback = () => {
+        root.unmount();
+        host.remove();
+        unmountCallback = null;
+    };
+
+    root.render(<Notification site={site} contacts={contacts} onHide={unmountCallback} />);
+};
+
+// 2. Listen for "Push" notices from background (for SPA navigation)
+chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'SHOW_NOTICE') {
-        const existingRoot = document.getElementById('click-for-syria-host');
-        if (existingRoot) return;
+        showNotice(message.site, message.contacts);
+    }
+});
 
-        const host = document.createElement('div');
-        host.id = 'click-for-syria-host';
-        document.body.appendChild(host);
-
-        const shadow = host.attachShadow({ mode: 'open' });
-        const root = createRoot(shadow);
-
-        unmountCallback = () => {
-            root.unmount();
-            host.remove();
-            unmountCallback = null;
-        };
-
-        root.render(<Notification site={message.site} contacts={message.contacts} onHide={unmountCallback} />);
+// 3. The "Pull" fix: Ask the background script if we should show something RIGHT NOW
+// This fixes the landing page issue because it runs as soon as the script loads.
+chrome.runtime.sendMessage({ type: 'CHECK_CURRENT_SITE' }, (response) => {
+    if (response && response.shouldShow) {
+        showNotice(response.site, response.contacts);
     }
 });
 
@@ -126,7 +136,7 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
                     lineHeight: 1.3,
                     color: '#1a1a1a'
                 }}>
-                    Did you know that <strong>ChatGPT</strong> is{' '}
+                    Did you know that <strong> ChatGPT </strong> is{' '}
                     <span style={{ color: '#ce1126', fontWeight: 700 }}>blocked</span>{' '}
                     for Syrians?
                 </h1>

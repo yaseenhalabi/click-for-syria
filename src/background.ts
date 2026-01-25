@@ -25,3 +25,22 @@ chrome.tabs.onUpdated.addListener((
         }
     }
 });
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'CHECK_CURRENT_SITE' && sender.tab?.url) {
+        const url = new URL(sender.tab.url);
+        const hostname = url.hostname.toLowerCase();
+        
+        const matchedSite = blockedSites.find(site => 
+            hostname === site.domain || hostname.endsWith('.' + site.domain)
+        );
+
+        if (matchedSite) {
+            sendResponse({ 
+                shouldShow: true, 
+                site: matchedSite.domain, 
+                contacts: matchedSite.contacts 
+            });
+        }
+    }
+    return true; // Keep the message channel open for the async response
+});
