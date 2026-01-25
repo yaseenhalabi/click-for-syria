@@ -11,11 +11,14 @@ import { blockedSites } from './shared/sites';
 import type { Contact } from './shared/sites';
 import SelectEmail from './SelectEmail';
 import SelectLinkedin from './SelectLinkedin';
+import GenerateInstaPost from './GenerateInstaPost';
 import ThankYou from './ThankYou';
 // @ts-ignore
 import selectEmailStyles from './SelectEmail.css?inline';
 // @ts-ignore
 import selectLinkedinStyles from './SelectLinkedin.css?inline';
+// @ts-ignore
+import generateInstaStyles from './GenerateInstaPost.css?inline';
 // @ts-ignore
 import outreachModalStyles from './OutreachModal.css?inline';
 // @ts-ignore
@@ -40,7 +43,9 @@ const instagramLogo = getAssetUrl(instagramLogoPath);
 const linkedinLogo = getAssetUrl(linkedinLogoPath);
 const waveBackgroundImage = getAssetUrl(waveBackgroundPath);
 import flagWavingPath from './assets/syrian-flag-waving.jpg';
+import instaBackgroundPath from './assets/insta-background.png';
 const flagWavingImage = getAssetUrl(flagWavingPath);
+const instaBackgroundImage = getAssetUrl(instaBackgroundPath);
 
 
 // 1. Function to trigger the render logic (extracted for reuse)
@@ -64,6 +69,11 @@ const showNotice = (site: string, contacts: any[]) => {
     const linkedinStyleSheet = document.createElement("style");
     linkedinStyleSheet.innerText = selectLinkedinStyles;
     shadow.appendChild(linkedinStyleSheet);
+
+    // Inject styles for GenerateInstaPost
+    const instaStyleSheet = document.createElement("style");
+    instaStyleSheet.innerText = generateInstaStyles;
+    shadow.appendChild(instaStyleSheet);
 
     // Inject global box-sizing reset for Shadow DOM
     const resetStyle = document.createElement("style");
@@ -107,7 +117,7 @@ chrome.runtime.sendMessage({ type: 'CHECK_CURRENT_SITE' }, (response) => {
 });
 
 const InjectedApp = ({ site, contacts }: { site: string; contacts: Contact[] }) => {
-    const [currentView, setCurrentView] = useState<'home' | 'email' | 'linkedin' | 'thankyou'>('home');
+    const [currentView, setCurrentView] = useState<'home' | 'email' | 'linkedin' | 'insta' | 'thankyou'>('home');
 
     // Get service name from blockedSites, fallback to domain
     const blockedSite = blockedSites.find(s => site.includes(s.domain) || s.domain.includes(site));
@@ -274,6 +284,34 @@ const InjectedApp = ({ site, contacts }: { site: string; contacts: Contact[] }) 
                 <SelectLinkedin
                     onBack={() => setCurrentView('home')}
                     contacts={contacts}
+                    logoUrl={logoImage}
+                    backgroundUrl={waveBackgroundImage}
+                />
+            </div>
+        );
+    }
+
+    if (currentView === 'insta') {
+        return (
+            <div style={{
+                position: 'fixed',
+                bottom: '30px',
+                right: '30px',
+                zIndex: 2147483647,
+                backgroundColor: '#fff',
+                borderRadius: '24px',
+                boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
+                width: '600px',
+                maxWidth: 'calc(100vw - 60px)',
+                overflow: 'hidden',
+                border: '1px solid rgba(0,0,0,0.05)',
+                boxSizing: 'border-box'
+            }}>
+                <GenerateInstaPost
+                    onBack={() => setCurrentView('home')}
+                    serviceName={serviceName}
+                    serviceLogoUrl={serviceImageUrl || undefined}
+                    instaBackgroundUrl={instaBackgroundImage}
                     logoUrl={logoImage}
                     backgroundUrl={waveBackgroundImage}
                 />
@@ -459,10 +497,7 @@ const InjectedApp = ({ site, contacts }: { site: string; contacts: Contact[] }) 
 
                     {/* Generate Post Button */}
                     <button
-                        onClick={() => {
-                            // TODO: Implement Instagram post generation
-                            console.log('Generate Instagram post');
-                        }}
+                        onClick={() => setCurrentView('insta')}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
