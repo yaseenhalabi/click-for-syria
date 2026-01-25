@@ -1,6 +1,11 @@
 # Click for Syria Chrome Extension
 
-A Chrome extension built with React, TypeScript, and Vite to help support humanitarian efforts in Syria.
+**Click for Syria** is a browser extension dedicated to supporting humanitarian efforts in Syria. Millions of people in Syria are currently facing severe humanitarian crises, and this tool aims to simplify the process of taking action—whether through awareness, outreach, or direct support. 
+
+To learn more about the cause and how you can help beyond this extension, visit [unblocksyria.com](https://unblocksyria.com).
+
+This project is built with React, TypeScript, and Vite to provide a seamless and effective user experience.
+
 
 ## 🚀 Quick Start (Installation)
 
