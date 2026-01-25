@@ -1,11 +1,25 @@
 import { createRoot } from 'react-dom/client';
 import { useState, useEffect } from 'react';
 import logoImagePath from './assets/click-for-syria.png';
+import miniLogoPath from './assets/click_for_syria_mini_logo.png';
 import syrianFlagPath from './assets/syrian-flag.png';
 import gmailLogoPath from './assets/gmail.png';
 import instagramLogoPath from './assets/instagram.png';
 import linkedinLogoPath from './assets/linkedin.png';
+import waveBackgroundPath from './assets/wave-haikei.png';
 import { blockedSites } from './shared/sites';
+import type { Contact } from './shared/sites';
+import SelectEmail from './SelectEmail';
+import SelectLinkedin from './SelectLinkedin';
+import ThankYou from './ThankYou';
+// @ts-ignore
+import selectEmailStyles from './SelectEmail.css?inline';
+// @ts-ignore
+import selectLinkedinStyles from './SelectLinkedin.css?inline';
+// @ts-ignore
+import outreachModalStyles from './OutreachModal.css?inline';
+// @ts-ignore
+import thankYouStyles from './ThankYou.css?inline';
 
 // Helper to get proper URL for assets - handles both inlined data URLs and file paths
 const getAssetUrl = (assetPath: string) => {
@@ -19,12 +33,15 @@ const getAssetUrl = (assetPath: string) => {
 
 // Get the proper extension URL for assets
 const logoImage = getAssetUrl(logoImagePath);
+const miniLogoImage = getAssetUrl(miniLogoPath);
 const syrianFlagImage = getAssetUrl(syrianFlagPath);
 const gmailLogo = getAssetUrl(gmailLogoPath);
 const instagramLogo = getAssetUrl(instagramLogoPath);
 const linkedinLogo = getAssetUrl(linkedinLogoPath);
+const waveBackgroundImage = getAssetUrl(waveBackgroundPath);
+import flagWavingPath from './assets/syrian-flag-waving.jpg';
+const flagWavingImage = getAssetUrl(flagWavingPath);
 
-let unmountCallback: (() => void) | null = null;
 
 // 1. Function to trigger the render logic (extracted for reuse)
 const showNotice = (site: string, contacts: any[]) => {
@@ -38,13 +55,40 @@ const showNotice = (site: string, contacts: any[]) => {
     const shadow = host.attachShadow({ mode: 'open' });
     const root = createRoot(shadow);
 
-    unmountCallback = () => {
+    // Inject styles for SelectEmail
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = selectEmailStyles;
+    shadow.appendChild(styleSheet);
+
+    // Inject styles for SelectLinkedin
+    const linkedinStyleSheet = document.createElement("style");
+    linkedinStyleSheet.innerText = selectLinkedinStyles;
+    shadow.appendChild(linkedinStyleSheet);
+
+    // Inject global box-sizing reset for Shadow DOM
+    const resetStyle = document.createElement("style");
+    resetStyle.innerText = `
+        * { box-sizing: border-box; }
+    `;
+    shadow.appendChild(resetStyle);
+
+    // Inject styles for OutreachModal
+    const modalStyleSheet = document.createElement("style");
+    modalStyleSheet.innerText = outreachModalStyles;
+    shadow.appendChild(modalStyleSheet);
+
+    // Inject styles for ThankYou
+    const thankYouStyleSheet = document.createElement("style");
+    thankYouStyleSheet.innerText = thankYouStyles;
+    shadow.appendChild(thankYouStyleSheet);
+
+    /*
+    const unmount = () => {
         root.unmount();
         host.remove();
-        unmountCallback = null;
     };
-
-    root.render(<Notification site={site} contacts={contacts} onHide={unmountCallback} />);
+    */
+    root.render(<InjectedApp site={site} contacts={contacts} />);
 };
 
 // 2. Listen for "Push" notices from background (for SPA navigation)
@@ -62,9 +106,8 @@ chrome.runtime.sendMessage({ type: 'CHECK_CURRENT_SITE' }, (response) => {
     }
 });
 
-const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[]; onHide: () => void }) => {
-    // Log contacts for debugging/verification purposes since they aren't displayed yet
-    console.log(`Contacts for ${site}:`, contacts);
+const InjectedApp = ({ site, contacts }: { site: string; contacts: Contact[] }) => {
+    const [currentView, setCurrentView] = useState<'home' | 'email' | 'linkedin' | 'thankyou'>('home');
 
     // Get service name from blockedSites, fallback to domain
     const blockedSite = blockedSites.find(s => site.includes(s.domain) || s.domain.includes(site));
@@ -74,12 +117,29 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
     const [serviceImageLoaded, setServiceImageLoaded] = useState(false);
     const [serviceImageUrl, setServiceImageUrl] = useState<string | null>(null);
 
+    const [isMinimized, setIsMinimized] = useState(() => {
+        return sessionStorage.getItem('click-for-syria-minimized') === 'true';
+    });
+    const [isDismissed, setIsDismissed] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+
+
+    const handleHide = () => {
+        setIsMinimized(true);
+        sessionStorage.setItem('click-for-syria-minimized', 'true');
+    };
+
+    const handleRestore = () => {
+        setIsMinimized(false);
+        sessionStorage.setItem('click-for-syria-minimized', 'false');
+    };
+
     // Try to load the service image dynamically
     useEffect(() => {
         if (blockedSite?.name) {
             const imageName = blockedSite.name.replace(/\s+/g, '-') + '.jpg';
             const imageUrl = chrome.runtime.getURL(`assets/${imageName}`);
-            
+
             // Test if image exists by trying to load it
             const img = new Image();
             img.onload = () => {
@@ -94,25 +154,174 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
         }
     }, [blockedSite?.name]);
 
-    const emailBody = `Dear Team,\n\nI am writing to request that service access be enabled for users in Syria.\n\nFollowing the lifting of the comprehensive trade embargo on Syria announced by the U.S. Treasury in December 2025, all sanctions on Syria have now been lifted by both the United States and the European Union. Syria is no longer listed under OFAC's embargoed countries.\n\nFor reference:\n1- U.S. Treasury announcement: https://ofac.treasury.gov/media/934736/download?inline\n2- OFAC sanctions programs overview: https://ofac.treasury.gov/sanctions-programs-and-country-information\n\nI have also attached relevant supporting documentation from https://unblocksyria.com/resources.\n\nSeveral other companies have already enabled access. As millions of Syrians work to rebuild their country, access to global digital services is increasingly important.\n\nI kindly request a review of the current restriction and would appreciate confirmation on whether Syria can now be onboarded and supported on your platform.\n\nBest regards,\n[Your Name]`;
+    if (isDismissed) {
+        return null;
+    }
 
-    const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contacts.map(c => c.email).join(','))}&su=${encodeURIComponent('Request to Enable Service Access in Syria')}&body=${encodeURIComponent(emailBody)}`;
-    
+
+    if (isMinimized) {
+        return (
+            <div
+                onClick={handleRestore}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                style={{
+                    position: 'fixed',
+                    bottom: '30px',
+                    right: '30px',
+                    width: '60px',
+                    height: '60px',
+                    backgroundColor: '#fff',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    zIndex: 2147483647,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'transform 0.2s ease',
+                    border: '2px solid white', // Ensures white circle appearance
+                    transform: isHovered ? 'scale(1.1)' : 'scale(1)'
+                }}
+            >
+                {/* The 'x' button */}
+                {isHovered && (
+                    <div
+                        onClick={(e) => {
+                            e.stopPropagation(); // Prevent restoring when clicking 'x'
+                            setIsDismissed(true);
+                        }}
+                        style={{
+                            position: 'absolute',
+                            top: '-5px',
+                            left: '-5px',
+                            width: '20px',
+                            height: '20px',
+                            backgroundColor: '#e0e0e0', // Light grey circle
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#666', // Dark grey 'x'
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            zIndex: 10
+                        }}
+                    >
+                        ✕
+                    </div>
+                )}
+                <img
+                    src={miniLogoImage}
+                    alt="Restored"
+                    style={{
+                        width: '70%',
+                        height: '70%',
+                        objectFit: 'contain',
+                        borderRadius: '0'
+                    }}
+                />
+            </div>
+        );
+    }
+
+    if (currentView === 'email') {
+        return (
+            <div style={{
+                position: 'fixed',
+                bottom: '30px',
+                right: '30px',
+                zIndex: 2147483647,
+                backgroundColor: '#fff', // Ensure background for visibility
+                borderRadius: '24px', // Increased from 16px
+                boxShadow: '0 12px 48px rgba(0,0,0,0.25)', // Increased shadow
+                // SelectEmail container has max-width 600px handled by CSS, but we need a wrapper to position it fixed like the notification
+                width: '600px',
+                maxWidth: 'calc(100vw - 60px)', // Ensure it doesn't touch edges on small screens
+                overflow: 'hidden',
+                border: '1px solid rgba(0,0,0,0.05)', // Subtle border
+                boxSizing: 'border-box'
+            }}>
+                <SelectEmail
+                    onBack={() => setCurrentView('home')}
+                    contacts={contacts}
+                    logoUrl={logoImage}
+                    backgroundUrl={waveBackgroundImage}
+                    onSuccess={() => setCurrentView('thankyou')}
+                />
+            </div>
+        );
+    }
+
+    if (currentView === 'linkedin') {
+        return (
+            <div style={{
+                position: 'fixed',
+                bottom: '30px',
+                right: '30px',
+                zIndex: 2147483647,
+                backgroundColor: '#fff', // Ensure background for visibility
+                borderRadius: '24px', // Increased from 16px
+                boxShadow: '0 12px 48px rgba(0,0,0,0.25)', // Increased shadow
+                // SelectLinkedin container has max-width 600px handled by CSS, but we need a wrapper to position it fixed like the notification
+                width: '600px',
+                maxWidth: 'calc(100vw - 60px)', // Ensure it doesn't touch edges on small screens
+                overflow: 'hidden',
+                border: '1px solid rgba(0,0,0,0.05)', // Subtle border
+                boxSizing: 'border-box'
+            }}>
+                <SelectLinkedin
+                    onBack={() => setCurrentView('home')}
+                    contacts={contacts}
+                    logoUrl={logoImage}
+                    backgroundUrl={waveBackgroundImage}
+                />
+            </div>
+        );
+    }
+
+    if (currentView === 'thankyou') {
+        return (
+            <div style={{
+                position: 'fixed',
+                bottom: '30px',
+                right: '30px',
+                zIndex: 2147483647,
+                backgroundColor: '#fff',
+                borderRadius: '24px',
+                boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
+                width: '600px',
+                maxWidth: 'calc(100vw - 60px)',
+                overflow: 'hidden',
+                border: '1px solid rgba(0,0,0,0.05)',
+                boxSizing: 'border-box'
+            }}>
+                <ThankYou
+                    onBack={() => setCurrentView('email')}
+                    logoUrl={logoImage}
+                    flagImageUrl={flagWavingImage}
+                />
+            </div>
+        );
+    }
+
     return (
         <div style={{
             position: 'fixed',
-            bottom: '20px',
-            right: '20px',
+            bottom: '30px',
+            right: '30px',
             backgroundColor: '#fff',
-            border: '1px solid #e0e0e0',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+            border: '1px solid rgba(0,0,0,0.05)', // Subtle border instead of #e0e0e0
+            borderRadius: '24px', // Increased from 12px
+            boxShadow: '0 12px 48px rgba(0,0,0,0.25)', // Stronger shadow
             zIndex: 2147483647,
             fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             color: '#333',
             overflow: 'hidden',
             width: '600px',
-            maxWidth: '90vw'
+            maxWidth: 'calc(100vw - 60px)', // Ensure 30px margin on both sides if screen is small
+            boxSizing: 'border-box'
         }}>
             {/* Top Bar */}
             <div style={{
@@ -126,7 +335,7 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
             }}>
                 {/* Show me later - Left side */}
                 <span
-                    onClick={onHide}
+                    onClick={handleHide}
                     style={{
                         position: 'absolute',
                         left: '24px',
@@ -139,22 +348,22 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
                     onMouseEnter={(e) => (e.currentTarget.style.color = '#333')}
                     onMouseLeave={(e) => (e.currentTarget.style.color = '#666')}
                 >
-                    Show me later
+                    Hide
                 </span>
-                
+
                 {/* Logo - Center */}
-                <img 
-                    src={logoImage} 
-                    alt="Click for Syria" 
+                <img
+                    src={logoImage}
+                    alt="Click for Syria"
                     style={{
                         height: '28px',
                         width: 'auto'
                     }}
                 />
             </div>
-            
+
             {/* Main Content */}
-            <div style={{ 
+            <div style={{
                 padding: '24px 32px',
                 textAlign: 'center'
             }}>
@@ -180,7 +389,7 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
                     gap: '10px'
                 }}>
                     {serviceImageLoaded && serviceImageUrl && (
-                        <img 
+                        <img
                             src={serviceImageUrl}
                             alt={serviceName}
                             style={{
@@ -190,7 +399,7 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
                             }}
                         />
                     )}
-                    <img 
+                    <img
                         src={syrianFlagImage}
                         alt="Syrian Flag"
                         style={{
@@ -218,10 +427,8 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
                     justifyContent: 'center'
                 }}>
                     {/* Send Email Button */}
-                    <a
-                        href={gmailLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <button
+                        onClick={() => setCurrentView('email')}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -230,7 +437,6 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
                             backgroundColor: '#fff',
                             border: '1px solid #e0e0e0',
                             borderRadius: '8px 0 0 8px',
-                            textDecoration: 'none',
                             color: '#1a1a1a',
                             fontSize: '15px',
                             fontWeight: 500,
@@ -249,7 +455,7 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
                     >
                         <img src={gmailLogo} alt="Gmail" style={{ width: '20px', height: '20px' }} />
                         Send Email
-                    </a>
+                    </button>
 
                     {/* Generate Post Button */}
                     <button
@@ -290,10 +496,7 @@ const Notification = ({ site, contacts, onHide }: { site: string; contacts: any[
 
                     {/* Send Linkedin Button */}
                     <button
-                        onClick={() => {
-                            // TODO: Implement LinkedIn sharing
-                            console.log('Send to LinkedIn');
-                        }}
+                        onClick={() => setCurrentView('linkedin')}
                         style={{
                             display: 'flex',
                             alignItems: 'center',

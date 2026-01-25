@@ -51,7 +51,7 @@ const InstaPostGenerator = () => {
 
         if (foundRow) {
           setName(foundRow.name);
-          setImage(`/assets/${name}.png`);
+          setImage(`/assets/${foundRow.name}.png`);
         }
       },
       error: (err: Error) => {
@@ -141,7 +141,7 @@ const InstaPostGenerator = () => {
         </div>
       </div>
 
-      <div style={{ marginBottom: "20px", padding: "5px" }}>
+      <div style={{ marginBottom: "20px", padding: "5px", display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
         <button
           onClick={downloadImage}
           style={{
@@ -153,6 +153,8 @@ const InstaPostGenerator = () => {
             border: "none",
             borderRadius: "5px",
             fontFamily: "Inter, sans-serif",
+            width: "100%",
+            maxWidth: "400px"
           }}
         >
           Download Image

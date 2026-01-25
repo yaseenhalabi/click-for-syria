@@ -1,0 +1,136 @@
+.select-email-container {
+    max-width: 600px;
+    margin: 0 auto;
+    font-family: 'Inter', sans-serif;
+    padding: 20px;
+    color: #000;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    position: relative;
+    /* Enable absolute positioning for children */
+}
+
+.back-button {
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    z-index: 10;
+    /* Ensure back button is clickable above other elements if needed */
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.header-logo {
+    height: 30px;
+    /* Adjust based on actual logo */
+}
+
+.logo-text {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.page-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.email-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.email-card {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 16px;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #b0b0b0;
+    /* Unselected text color */
+}
+
+.email-card.selected {
+    background-color: #f5f5f5;
+    /* Light grey background for selected */
+    border: 2px solid #000;
+    color: #000;
+}
+
+.card-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.card-row:last-child {
+    margin-bottom: 0;
+}
+
+
+
+.email-text {
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.role-text {
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.footer-action {
+    margin-top: 40px;
+}
+
+.generate-btn {
+    width: 100%;
+    background-color: #007a33;
+    /* Syrian Flag Green roughly */
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.generate-btn:hover {
+    background-color: #006028;
+}
+
+.btn-icon {
+    fill: white;
+    stroke: none;
+}

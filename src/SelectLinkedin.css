@@ -1,0 +1,124 @@
+.select-linkedin-container {
+    max-width: 600px;
+    margin: 0 auto;
+    font-family: 'Inter', sans-serif;
+    padding: 20px;
+    color: #000;
+    text-align: left;
+    box-sizing: border-box;
+    position: relative;
+    height: 100%;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    position: relative;
+    /* Enable absolute positioning for children */
+}
+
+.back-button {
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    z-index: 10;
+    /* Ensure back button is clickable above other elements if needed */
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.header-logo {
+    height: 30px;
+    /* Adjust based on actual logo */
+}
+
+.page-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.profiles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.profile-card {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 16px;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #000;
+    text-decoration: none;
+    /* For the anchor tag */
+}
+
+.profile-card:hover {
+    background-color: #f0f0f0;
+    border-color: #d0d0d0;
+}
+
+.linkedin-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.profile-name {
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.footer-action {
+    margin-top: 40px;
+}
+
+.generate-btn {
+    width: 100%;
+    background-color: #007a33;
+    /* Syrian Flag Green roughly */
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.generate-btn:hover {
+    background-color: #006028;
+}
+
+.btn-icon-docs {
+    fill: white;
+    stroke: none;
+    width: 24px;
+    height: 24px;
+}
