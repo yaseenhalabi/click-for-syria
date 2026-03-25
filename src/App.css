@@ -8,6 +8,8 @@
 
 #root {
   width: 380px;
+  min-height: 100vh;
+  background: #fff;
 }
 
 html,
@@ -15,6 +17,7 @@ body {
   width: 380px;
   min-width: 380px;
   max-width: 380px;
+  min-height: 100vh;
   overflow-x: hidden;
   font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   font-size: 15px;

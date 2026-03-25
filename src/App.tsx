@@ -127,7 +127,6 @@ function App() {
       {/* Header */}
       <header className="popup-header">
         <img src={logoImage} alt="Click for Syria" />
-        <span className="popup-header-title">Click for Syria</span>
       </header>
 
       {/* Banner — only if active site is permanently disabled */}
