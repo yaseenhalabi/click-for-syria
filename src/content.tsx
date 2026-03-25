@@ -13,14 +13,20 @@ import SelectEmail from './SelectEmail';
 import SelectLinkedin from './SelectLinkedin';
 import GenerateInstaPost from './GenerateInstaPost';
 import ThankYou from './ThankYou';
+import { setSiteState } from './shared/storage';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import selectEmailStyles from './SelectEmail.css?inline';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import selectLinkedinStyles from './SelectLinkedin.css?inline';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import generateInstaStyles from './GenerateInstaPost.css?inline';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import outreachModalStyles from './OutreachModal.css?inline';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import thankYouStyles from './ThankYou.css?inline';
 
@@ -49,7 +55,7 @@ const instaBackgroundImage = getAssetUrl(instaBackgroundPath);
 
 
 // 1. Function to trigger the render logic (extracted for reuse)
-const showNotice = (site: string, contacts: any[]) => {
+const showNotice = (site: string, contacts: Contact[], startMinimized: boolean) => {
     const existingRoot = document.getElementById('click-for-syria-host');
     if (existingRoot) return;
 
@@ -92,19 +98,35 @@ const showNotice = (site: string, contacts: any[]) => {
     thankYouStyleSheet.innerText = thankYouStyles;
     shadow.appendChild(thankYouStyleSheet);
 
+    const animationStyle = document.createElement('style');
+    animationStyle.innerText = `
+    @keyframes cfs-snooze-in {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes cfs-icon-in {
+        from { opacity: 0; transform: scale(0.8); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; animation: none !important; }
+    }
+`;
+    shadow.appendChild(animationStyle);
+
     /*
     const unmount = () => {
         root.unmount();
         host.remove();
     };
     */
-    root.render(<InjectedApp site={site} contacts={contacts} />);
+    root.render(<InjectedApp site={site} contacts={contacts} startMinimized={startMinimized} />);
 };
 
 // 2. Listen for "Push" notices from background (for SPA navigation)
 chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'SHOW_NOTICE') {
-        showNotice(message.site, message.contacts);
+        showNotice(message.site, message.contacts, message.startMinimized ?? false);
     }
 });
 
@@ -112,11 +134,16 @@ chrome.runtime.onMessage.addListener((message) => {
 // This fixes the landing page issue because it runs as soon as the script loads.
 chrome.runtime.sendMessage({ type: 'CHECK_CURRENT_SITE' }, (response) => {
     if (response && response.shouldShow) {
-        showNotice(response.site, response.contacts);
+        showNotice(response.site, response.contacts, response.startMinimized ?? false);
     }
 });
 
-const InjectedApp = ({ site, contacts }: { site: string; contacts: Contact[] }) => {
+// eslint-disable-next-line react-refresh/only-export-components -- content script entry, no exports by design
+const InjectedApp = ({ site, contacts, startMinimized: initialMinimized }: {
+    site: string;
+    contacts: Contact[];
+    startMinimized: boolean;
+}) => {
     const [currentView, setCurrentView] = useState<'home' | 'email' | 'linkedin' | 'insta' | 'thankyou'>('home');
     const [userName, setUserName] = useState("[Your Name]");
     useEffect(() => {
@@ -137,21 +164,19 @@ const InjectedApp = ({ site, contacts }: { site: string; contacts: Contact[] }) 
     const [serviceImageLoaded, setServiceImageLoaded] = useState(false);
     const [serviceImageUrl, setServiceImageUrl] = useState<string | null>(null);
 
-    const [isMinimized, setIsMinimized] = useState(() => {
-        return sessionStorage.getItem('click-for-syria-minimized') === 'true';
-    });
+    const [isMinimized, setIsMinimized] = useState(initialMinimized);
     const [isDismissed, setIsDismissed] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [isSnoozeMenuOpen, setIsSnoozeMenuOpen] = useState(false);
 
 
     const handleHide = () => {
+        setSiteState(site, { dismissed: true });
         setIsMinimized(true);
-        sessionStorage.setItem('click-for-syria-minimized', 'true');
     };
 
     const handleRestore = () => {
         setIsMinimized(false);
-        sessionStorage.setItem('click-for-syria-minimized', 'false');
     };
 
     // Try to load the service image dynamically
@@ -181,68 +206,158 @@ const InjectedApp = ({ site, contacts }: { site: string; contacts: Contact[] }) 
 
     if (isMinimized) {
         return (
-            <div
-                onClick={handleRestore}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-                style={{
-                    position: 'fixed',
-                    bottom: '30px',
-                    right: '30px',
-                    width: '60px',
-                    height: '60px',
-                    backgroundColor: '#fff',
-                    borderRadius: '50%',
-                    cursor: 'pointer',
-                    zIndex: 2147483647,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'transform 0.2s ease',
-                    border: '2px solid white', // Ensures white circle appearance
-                    transform: isHovered ? 'scale(1.1)' : 'scale(1)'
-                }}
-            >
-                {/* The 'x' button */}
-                {isHovered && (
+            <>
+                {isSnoozeMenuOpen && (
                     <div
-                        onClick={(e) => {
-                            e.stopPropagation(); // Prevent restoring when clicking 'x'
-                            setIsDismissed(true);
-                        }}
                         style={{
-                            position: 'absolute',
-                            top: '-5px',
-                            left: '-5px',
-                            width: '20px',
-                            height: '20px',
-                            backgroundColor: '#e0e0e0', // Light grey circle
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#666', // Dark grey 'x'
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                            zIndex: 10
+                            position: 'fixed',
+                            bottom: '100px',
+                            right: '30px',
+                            width: '220px',
+                            backgroundColor: '#fff',
+                            borderRadius: '12px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                            padding: '8px 0',
+                            zIndex: 2147483647,
+                            fontFamily: 'Inter, system-ui, -apple-system, "Segoe UI", sans-serif',
+                            animation: 'cfs-snooze-in 150ms ease-out',
                         }}
                     >
-                        ✕
+                        {[
+                            {
+                                // React state only — does NOT write to storage
+                                label: 'Hide for this session',
+                                onClick: () => {
+                                    setIsDismissed(true);
+                                    setIsSnoozeMenuOpen(false);
+                                },
+                            },
+                            {
+                                // Sets hideUntil only — does NOT set dismissed: true
+                                label: 'Hide for today',
+                                onClick: () => {
+                                    setSiteState(site, { hideUntil: Date.now() + 86400000 });
+                                    setIsDismissed(true);
+                                    setIsSnoozeMenuOpen(false);
+                                },
+                            },
+                            {
+                                label: 'Hide permanently on this site',
+                                onClick: () => {
+                                    setSiteState(site, { permanentlyDisabled: true });
+                                    setIsDismissed(true);
+                                    setIsSnoozeMenuOpen(false);
+                                },
+                            },
+                        ].map(({ label, onClick }) => (
+                            <button
+                                key={label}
+                                onClick={onClick}
+                                style={{
+                                    display: 'block',
+                                    width: '100%',
+                                    padding: '10px 16px',
+                                    background: 'none',
+                                    border: 'none',
+                                    textAlign: 'left',
+                                    fontSize: '14px',
+                                    fontFamily: 'inherit',
+                                    color: '#1a1a1a',
+                                    cursor: 'pointer',
+                                    lineHeight: 1.4,
+                                }}
+                                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+                                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                        <div style={{ borderTop: '1px solid #eee', margin: '4px 0' }} />
+                        <button
+                            onClick={() => setIsSnoozeMenuOpen(false)}
+                            style={{
+                                display: 'block',
+                                width: '100%',
+                                padding: '8px 16px',
+                                background: 'none',
+                                border: 'none',
+                                textAlign: 'left',
+                                fontSize: '13px',
+                                fontFamily: 'inherit',
+                                color: '#666',
+                                cursor: 'pointer',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                        >
+                            Cancel
+                        </button>
                     </div>
                 )}
-                <img
-                    src={miniLogoImage}
-                    alt="Restored"
+                <div
+                    onClick={handleRestore}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
                     style={{
-                        width: '70%',
-                        height: '70%',
-                        objectFit: 'contain',
-                        borderRadius: '0'
+                        position: 'fixed',
+                        bottom: '30px',
+                        right: '30px',
+                        width: '60px',
+                        height: '60px',
+                        backgroundColor: '#fff',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        zIndex: 2147483647,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'transform 0.2s ease',
+                        border: '2px solid white', // Ensures white circle appearance
+                        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+                        animation: 'cfs-icon-in 200ms ease-out',
                     }}
-                />
-            </div>
+                >
+                    {/* The 'x' button */}
+                    {isHovered && (
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsSnoozeMenuOpen(true);
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: '-5px',
+                                left: '-5px',
+                                width: '20px',
+                                height: '20px',
+                                backgroundColor: '#e0e0e0', // Light grey circle
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#666', // Dark grey 'x'
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                zIndex: 10
+                            }}
+                        >
+                            ✕
+                        </div>
+                    )}
+                    <img
+                        src={miniLogoImage}
+                        alt="Restored"
+                        style={{
+                            width: '70%',
+                            height: '70%',
+                            objectFit: 'contain',
+                            borderRadius: '0'
+                        }}
+                    />
+                </div>
+            </>
         );
     }
 
