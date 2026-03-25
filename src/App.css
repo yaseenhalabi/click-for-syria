@@ -6,6 +6,10 @@
   padding: 0;
 }
 
+#root {
+  width: 380px;
+}
+
 html,
 body {
   width: 380px;
